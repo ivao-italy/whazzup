@@ -15,6 +15,13 @@ class Home extends BaseController
         //$this->insertPilotLogInDB();
     }
 
+    public function print(){
+        $file = json_decode(file_get_contents(WRITEPATH . 'pilotLog/pilotLog'));
+
+        var_dump($file[1]->flightPlan->id);
+
+
+    }
     /**
      * Metti inloop il download del PilotSummary finchè non ottiene un succes o raggiunge il limite di 50 per non sovra caricare
      * il server
@@ -97,6 +104,7 @@ class Home extends BaseController
                 //Ignoro le tracce che non hanno presentato un piano di volo
                 if (!empty($flightPlan)){
                     $insert['FPdepAD'] = $flightPlan->arrivalId;
+                    $insert['FIid'] = $flightPlan->id;
                     $insert['FPdestAD'] = $flightPlan->departureId;
                     $insert['FPacft'] = $flightPlan->aircraftId;
 
