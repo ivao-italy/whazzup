@@ -7,7 +7,7 @@ class WhazzupInfo extends Model
     protected $table = 'whazzupInfo';
     protected $primaryKey = 'id';
     protected $returnType = 'object';
-    protected $allowedFields = ['timestamp' , 'code'];
+    protected $allowedFields = ['timestamp' , 'code', 'message'];
 
 
 }
