@@ -37,6 +37,7 @@ $routes->set404Override();
 // route since we don't have to scan directories.
 $routes->get('/', 'Home::index');
 //$routes->get('home/(:any)', 'Home::$1');
+$routes->get('home/print', 'Home::Print');
 $routes->cli('home/(:any)', 'Home::$1');
 
 /*
