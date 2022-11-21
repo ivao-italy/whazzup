@@ -104,7 +104,7 @@ class Home extends BaseController
                 //Ignoro le tracce che non hanno presentato un piano di volo
                 if (!empty($flightPlan)){
                     $insert['FPdepAD'] = $flightPlan->arrivalId;
-                    $insert['FIid'] = $flightPlan->id;
+                    $insert['FPid'] = $flightPlan->id;
                     $insert['FPdestAD'] = $flightPlan->departureId;
                     $insert['FPacft'] = $flightPlan->aircraftId;
 

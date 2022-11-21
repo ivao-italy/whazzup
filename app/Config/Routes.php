@@ -39,6 +39,7 @@ $routes->get('/', 'Home::index');
 //$routes->get('home/(:any)', 'Home::$1');
 $routes->get('home/print', 'Home::Print');
 $routes->cli('home/(:any)', 'Home::$1');
+$routes->get('pilot/(:any)', 'Pilot::$1');
 
 /*
  * --------------------------------------------------------------------
