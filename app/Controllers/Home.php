@@ -15,13 +15,6 @@ class Home extends BaseController
         //$this->insertPilotLogInDB();
     }
 
-    public function print(){
-        $file = json_decode(file_get_contents(WRITEPATH . 'pilotLog/pilotLog'));
-
-        var_dump($file[1]->flightPlan->id);
-
-
-    }
     /**
      * Metti inloop il download del PilotSummary finchè non ottiene un succes o raggiunge il limite di 50 per non sovra caricare
      * il server
@@ -35,17 +28,21 @@ class Home extends BaseController
 
         $a = 0;
         do {
-            $CURL->setHeader("Api-Key", "MV8kLc2labiJ0cr3bUMXFPrm9MTuw4uC");
+            //$CURL->setHeader("Api-Key", "MV8kLc2labiJ0cr3bUMXFPrm9MTuw4uC");
             $CURL->setHeader("accept", "application/json");
-            $response = $CURL->request('GET', 'https://api.ivao.aero/v2/tracker/now/pilots', ['http_errors' => false]);
+            $response = $CURL->request('GET', 'https://api.ivao.aero/v2/tracker/whazzup', ['http_errors' => false]);
 
 
             $code = $response->getStatusCode();
 
             if ($code < 400){
-                $body = $response->getJSON();
+                $body = json_decode($response->getBody());
 
-                file_put_contents(WRITEPATH . 'pilotLog/pilotLog', json_decode($body));
+                $pilots = $body->clients->pilots;
+                $atcs = $body->clients->atcs;
+
+                file_put_contents(WRITEPATH . 'pilotLog/pilotLog', json_encode($pilots));
+                file_put_contents(WRITEPATH . 'pilotLog/atctLog', json_encode($atcs));
                 $insert['code'] = $code;
 
             }
@@ -85,70 +82,11 @@ class Home extends BaseController
                 $insert['vid'] = $item->userId;
                 $insert['callsign'] = $item->callsign;
                 $insert['connTime'] = $item->createdAt;
-
-                $insert['connType'] = $item->connectionType ;
-
-                $lastTrack = $item->lastTrack;
-
-                $insert['altitude'] = $lastTrack->altitude ?? NULL;
-                $insert['gs'] = $lastTrack->groundSpeed ?? NULL;
-                $insert['heading'] = $lastTrack->heading ?? NULL;
-                $insert['lat'] = $lastTrack->latitude ?? NULL;
-                $insert['lon'] = $lastTrack->longitude ?? NULL;
-                $insert['onGround'] = $lastTrack->onGround ?? NULL;
-                $insert['timestamp'] = $lastTrack->timestamp ?? NULL;
-                $insert['time'] = $lastTrack->time ?? NULL;
-
-                $flightPlan = $item->flightPlan;
-
-                //Ignoro le tracce che non hanno presentato un piano di volo
-                if (!empty($flightPlan)){
-                    $insert['FPdepAD'] = $flightPlan->arrivalId;
-                    $insert['FPid'] = $flightPlan->id;
-                    $insert['FPdestAD'] = $flightPlan->departureId;
-                    $insert['FPacft'] = $flightPlan->aircraftId;
-
-                    $softwareType = $item->softwareType;
-
-                    $insert['clientName'] = $softwareType->name;
-
-                    $user = $item->user;
-                    $rating = $user->rating;
-
-                    $insert['rating'] = $rating->pilotRatingId;
-
-                    $CLIENTLOG->insert($insert);
-                }
-            }
-            $log = fopen(WRITEPATH . 'logs/download.log', 'a+');
-            fwrite($log, time() . " [INFO] Rows inserted Correctly \n" );
-            fclose($log);
-        }
-        else{
-            $log = fopen(WRITEPATH . 'logs/download.log', 'a+');
-            fwrite($log, time() . " [ERROR] Rows not inserted. Code >400 \n" );
-            fclose($log);
-        }
-    }
-/*
-    public function insertPilotLogInDB(){
-
-        $WHAZZUPINFO = new WhazzupInfo();
-
-        $lastrow = $WHAZZUPINFO->orderBy('timestamp', 'DESC')->first();
-
-        if ($lastrow->code <400){
-
-            $CLIENTLOG = new ClientLog();
-            $file = json_decode(file_get_contents(WRITEPATH . 'pilotLog/pilotLog'));
-
-            foreach ($file as $item){
-
+                $insert['connType'] = 'PILOT' ;
+                $insert['clientName'] = $item->softwareTypeId;
+                $insert['clientVersion'] = $item->softwareVersion;
                 $insert['vid'] = $item->userId;
-                $insert['callsign'] = $item->callsign;
-                $insert['connTime'] = $item->createdAt;
-
-                $insert['connType'] = $item->connectionType ;
+                $insert['rating'] = $item->rating;
 
                 $lastTrack = $item->lastTrack;
 
@@ -161,22 +99,27 @@ class Home extends BaseController
                 $insert['timestamp'] = $lastTrack->timestamp ?? NULL;
                 $insert['time'] = $lastTrack->time ?? NULL;
 
+
                 $flightPlan = $item->flightPlan;
 
                 //Ignoro le tracce che non hanno presentato un piano di volo
                 if (!empty($flightPlan)){
-                    $insert['FPdepAD'] = $flightPlan->arrivalId;
-                    $insert['FPdestAD'] = $flightPlan->departureId;
+                    $insert['FPdestAD'] = $flightPlan->arrivalId;
+                    $insert['FPid'] = $flightPlan->id;
+                    $insert['FPdepAD'] = $flightPlan->departureId;
                     $insert['FPacft'] = $flightPlan->aircraftId;
-
-                    $softwareType = $item->softwareType;
-
-                    $insert['clientName'] = $softwareType->name;
-
-                    $user = $item->user;
-                    $rating = $user->rating;
-
-                    $insert['rating'] = $rating->pilotRatingId;
+                    $insert['FPaltAD'] = $flightPlan->alternativeId;
+                    $insert['FProute'] = $flightPlan->route;
+                    $insert['FPremarks'] = $flightPlan->remarks;
+                    $insert['FPspeed'] = $flightPlan->speed;
+                    $insert['FPfl'] = $flightPlan->level;
+                    $insert['FPfrule'] = $flightPlan->flightRules;
+                    $insert['FPflightType'] = $flightPlan->flightType;
+                    $insert['FPeet'] = $flightPlan->eet;
+                    $insert['FPendurance'] = $flightPlan->endurance;
+                    $insert['FPdepTime'] = $flightPlan->departureTime;
+                    $insert['FPpob'] = $flightPlan->peopleOnBoard;
+                    $insert['FPequip'] = $flightPlan->aircraftEquipments;
 
                     $CLIENTLOG->insert($insert);
                 }
@@ -191,5 +134,28 @@ class Home extends BaseController
             fclose($log);
         }
     }
-*/
+
+    public function test(){
+
+        $CURL = Services::curlrequest();
+
+        //$CURL->setHeader("Api-Key", "MV8kLc2labiJ0cr3bUMXFPrm9MTuw4uC");
+        $CURL->setHeader("accept", "application/json");
+        $response = $CURL->request('GET', 'https://api.ivao.aero/v2/tracker/whazzup', ['http_errors' => false]);
+
+
+        $code = $response->getStatusCode();
+
+
+            $body = json_decode($response->getBody());
+
+
+            echo "<pre>";
+            echo(json_encode($body->clients->pilots));
+            echo "</pre>";
+
+
+
+    }
+
 }

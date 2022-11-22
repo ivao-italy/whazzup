@@ -1,13 +1,21 @@
 <?php namespace App\Controllers;
 
 use App\Models\ClientLog;
+use App\Models\PilotLogHistory;
 use CodeIgniter\I18n\Time;
 
 class Pilot extends BaseController
 {
-    public function execute(){
+
+    /**
+     * La funzione processa i dati nel CLientLog e inserisce i dati nel pilotLog e cancella i dati nel clientLog
+     * @return void
+     * @throws \ReflectionException
+     */
+    public function insertPilotLog(){
 
         $PILOTS = new ClientLog();
+        $PILOTLOG = new PilotLogHistory();
 
 
         $TIME = Time::now('UTC');
@@ -19,21 +27,86 @@ class Pilot extends BaseController
 
         foreach ($FIip as $singleConnection) {
 
-            $firstRowOnGround = $PILOTS->where(['FPid'=> $singleConnection->FPid, 'onGround' => 1])->orderBy('timestamp', 'ASC')->first();
-            $firstRowOnAir    = $PILOTS->where(['FPid'=> $singleConnection->FPid, 'onGround' => 0])->orderBy('timestamp', 'ASC')->first();
-            $lastRowOnAir     = $PILOTS->where(['FPid'=> $singleConnection->FPid, 'onGround' => 0])->orderBy('timestamp', 'DESC')->first();
-            $lastRowOnGround  = $PILOTS->where(['FPid'=> $singleConnection->FPid, 'onGround' => 1])->orderBy('timestamp', 'DESC')->first();
+            $firstRowOnGround = $PILOTS
+                ->where([
+                    'FPid'=> $singleConnection->FPid,
+                    'onGround' => 1])
+                ->orderBy('timestamp', 'ASC')
+                    ->first();
+            if (!empty($firstRowOnGround)){
+                $firstRowOnAir    = $PILOTS
+                    ->where([
+                        'FPid'=> $singleConnection->FPid,
+                        'onGround' => 0,
+                        'timestamp>' => $firstRowOnGround->timestamp])
+                    ->orderBy('timestamp', 'ASC')
+                    ->first();
+            }
+            if (!empty($firstRowOnAir)){
+                $lastRowOnAir     = $PILOTS
+                    ->where([
+                        'FPid'=> $singleConnection->FPid,
+                        'onGround' => 0,
+                        'timestamp>' => $firstRowOnAir->timestamp])
+                    ->orderBy('timestamp', 'DESC')
+                    ->first();
+            }
+            if (!empty($lastRowOnAir)){
+                $lastRowOnGround  = $PILOTS
+                    ->where([
+                        'FPid'=> $singleConnection->FPid,
+                        'onGround' => 1,
+                        'timestamp>' => $lastRowOnAir->timestamp])
+                    ->orderBy('timestamp', 'DESC')
+                    ->first();
 
+            }
             if (!empty($firstRowOnGround) && !empty($firstRowOnAir) && !empty($lastRowOnAir) && !empty($lastRowOnGround) ){
 
-                //Seleziono per ogni FPid soltanto  voli che risultano con prima e ultima riga con onground 1
-               // foreach ($singleConnection as $item) {
 
-                    $totalOnGround = $this->timeCalculator($firstRowOnGround->timestamp, $lastRowOnGround->timestamp);
-                    $totalOnAir = $this->timeCalculator($firstRowOnAir->timestamp, $lastRowOnAir->timestamp);
-                    echo $singleConnection->FPid . ' ' .  ' ' . $firstRowOnGround->onGround . ' ' . $totalOnGround . ' <strong>' . $totalOnAir . '</strong><br>';
 
-               // }
+                $totalOnGround = $this->timeCalculator($firstRowOnGround->timestamp, $lastRowOnGround->timestamp);
+                $totalOnAir = $this->timeCalculator($firstRowOnAir->timestamp, $lastRowOnAir->timestamp);
+
+                //Controllo che onAir sia minore di onGround.
+                if ($totalOnGround > $totalOnAir){
+
+
+                    //echo $singleConnection->FPid . ' ' . ' ' . $totalOnGround . ' <strong>' . $this->secondConverter($totalOnAir,'H:i') . '</strong><br>';
+
+
+
+                    $insert['callsign'] = $firstRowOnGround->callsign;
+                    $insert['FPid'] = $firstRowOnGround->FPid;
+                    $insert['vid'] = $firstRowOnGround->vid;
+                    $insert['FPacft'] = $firstRowOnGround->FPacft;
+                    $insert['FPdepAD'] = $firstRowOnGround->FPdepAD;
+                    $insert['FPdestAD'] = $firstRowOnGround->FPdestAD;
+                    $insert['FProute'] = $firstRowOnGround->FProute;
+                    $insert['FPspeed'] = $firstRowOnGround->FPspeed;
+                    $insert['FPfrule'] = $firstRowOnGround->FPfrule;
+                    $insert['FPfl'] = $firstRowOnGround->FPfl;
+                    $insert['FPdepTime'] = $firstRowOnGround->FPdepTime;
+                    $insert['EETHours'] = $this->secondConverter($firstRowOnGround->FPeet, 'H');
+                    $insert['EETMins'] = $this->secondConverter($firstRowOnGround->FPeet, 'i');
+                    $insert['enduranceHours'] = $this->secondConverter($firstRowOnGround->FPendurance, 'H');;
+                    $insert['enduranceMins'] = $this->secondConverter($firstRowOnGround->FPendurance, 'i');;
+                    $insert['altnAD'] = $firstRowOnGround->FPaltAD;
+                    $insert['otherInfo'] = $firstRowOnGround->FPremarks;
+                    $insert['FPtypeOfFlight'] = $firstRowOnGround->FPflightType;
+                    $insert['FPpob'] = $firstRowOnGround->FPpob;
+                    $insert['rating'] = $firstRowOnGround->rating;
+
+                    $insert['connTime'] = $this->timeConverter($firstRowOnGround->connTime);
+                    $insert['airborneTime'] =  $this->timeConverter($firstRowOnAir->timestamp);
+                    $insert['timeOnline'] = $totalOnGround;
+                    $insert['timeOnAir'] = $totalOnAir;
+
+                    $PILOTLOG->insert($insert);
+
+                    //Cancello tutti i record con lo stesso ID
+                    $PILOTS->where(['FPid' => $firstRowOnGround->FPid])->delete();
+                }
 
             }
 
@@ -42,7 +115,7 @@ class Pilot extends BaseController
 
     }
 
-    private function timeCalculator($firstDate, $lastDate, $output = 's'){
+    private function timeCalculator($firstDate, $lastDate){
         $TIME1 = Time::createFromFormat('Y-m-d H:i:s', $firstDate);
         $TIME2 = Time::createFromFormat('Y-m-d H:i:s', $lastDate);
 
@@ -54,6 +127,16 @@ class Pilot extends BaseController
             $total = $TIME2->getTimestamp() - $TIME1->getTimestamp();
             return $total;
         }
+    }
+
+    private function timeConverter($date, $formatInput = 'Y-m-d H:i:s', $formatOutput= 'YmdHis'){
+        $TIME = Time::createFromFormat($formatInput, $date);
+
+        return $TIME->format($formatOutput);
+    }
+
+    private function secondConverter($seconds, $formatOutput = 'H:i'){
+        return gmdate($formatOutput, $seconds);
     }
 
 

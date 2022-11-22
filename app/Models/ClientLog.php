@@ -9,8 +9,7 @@ class ClientLog extends Model
     protected $table = 'clientLog';
     protected $primaryKey = 'id';
     protected $returnType = 'object';
-    protected $allowedFields = ['id', 'callsign', 'vid', 'timestamp', 'connType', 'lat', 'lon', 'altitude', 'gs', 'FPid', 'FPacft', 'FPdepAD', 'FPdestAD', 'connTime', 'time', 'rating', 'heading', 'onGround', 'clientName', 'clientVersion'];
-
+    protected $allowedFields = [ 'id', 'callsign', 'vid', 'timestamp', 'connType', 'lat', 'lon', 'altitude', 'gs', 'FPid', 'FPacft', 'FPdepAD', 'FPdestAD', 'FPaltAD', 'FProute', 'FPremarks', 'FPspeed', 'FPfl', 'FPfrule', 'FPflightType', 'FPeet', 'FPendurance', 'FPdepTime', 'FPpob', 'FPequip', 'connTime', 'time', 'rating', 'heading', 'onGround', 'clientName', 'clientVersion'];
 
 
         public function getDistinctFPid($where){
