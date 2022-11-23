@@ -8,7 +8,8 @@ class Pilot extends BaseController
 {
 
     /**
-     * La funzione processa i dati nel CLientLog e inserisce i dati nel pilotLog e cancella i dati nel clientLog
+     * La funzione processa i dati nel CLientLog e inserisce i dati nel pilotLog e cancella i dati nel clientLog.
+     * Gira ogni notte alle 3:00
      * @return void
      * @throws \ReflectionException
      */
@@ -72,10 +73,6 @@ class Pilot extends BaseController
                 if ($totalOnGround > $totalOnAir){
 
 
-                    //echo $singleConnection->FPid . ' ' . ' ' . $totalOnGround . ' <strong>' . $this->secondConverter($totalOnAir,'H:i') . '</strong><br>';
-
-
-
                     $insert['callsign'] = $firstRowOnGround->callsign;
                     $insert['FPid'] = $firstRowOnGround->FPid;
                     $insert['vid'] = $firstRowOnGround->vid;
@@ -107,12 +104,11 @@ class Pilot extends BaseController
                     //Cancello tutti i record con lo stesso ID
                     $PILOTS->where(['FPid' => $firstRowOnGround->FPid])->delete();
                 }
-
             }
 
         }
-
-
+        //CANCELLO TUTTI I LOG VECCHI DI PASTDATE
+        $PILOTS->where(['connTime<' => $pastDate])->delete();
     }
 
     private function timeCalculator($firstDate, $lastDate){

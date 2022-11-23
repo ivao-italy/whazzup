@@ -104,58 +104,48 @@ class Home extends BaseController
 
                 //Ignoro le tracce che non hanno presentato un piano di volo
                 if (!empty($flightPlan)){
-                    $insert['FPdestAD'] = $flightPlan->arrivalId;
-                    $insert['FPid'] = $flightPlan->id;
-                    $insert['FPdepAD'] = $flightPlan->departureId;
-                    $insert['FPacft'] = $flightPlan->aircraftId;
-                    $insert['FPaltAD'] = $flightPlan->alternativeId;
-                    $insert['FProute'] = $flightPlan->route;
-                    $insert['FPremarks'] = $flightPlan->remarks;
-                    $insert['FPspeed'] = $flightPlan->speed;
-                    $insert['FPfl'] = $flightPlan->level;
-                    $insert['FPfrule'] = $flightPlan->flightRules;
-                    $insert['FPflightType'] = $flightPlan->flightType;
-                    $insert['FPeet'] = $flightPlan->eet;
-                    $insert['FPendurance'] = $flightPlan->endurance;
-                    $insert['FPdepTime'] = $flightPlan->departureTime;
-                    $insert['FPpob'] = $flightPlan->peopleOnBoard;
-                    $insert['FPequip'] = $flightPlan->aircraftEquipments;
 
-                    $CLIENTLOG->insert($insert);
+
+                    $testDepAD = preg_match('/LI[A-Z]{2}/', $flightPlan->departureId);
+                    $testDestAD = preg_match('/LI[A-Z]{2}/', $flightPlan->arrivalId);
+
+                    //Inserisco soltanto i log che presentano un arrivo o partenza dall'italia
+
+                    if ($testDepAD === true || $testDestAD === true){
+                        $insert['FPdestAD'] = $flightPlan->arrivalId;
+                        $insert['FPid'] = $flightPlan->id;
+                        $insert['FPdepAD'] = $flightPlan->departureId;
+                        $insert['FPacft'] = $flightPlan->aircraftId;
+                        $insert['FPaltAD'] = $flightPlan->alternativeId;
+                        $insert['FProute'] = $flightPlan->route;
+                        $insert['FPremarks'] = $flightPlan->remarks;
+                        $insert['FPspeed'] = $flightPlan->speed;
+                        $insert['FPfl'] = $flightPlan->level;
+                        $insert['FPfrule'] = $flightPlan->flightRules;
+                        $insert['FPflightType'] = $flightPlan->flightType;
+                        $insert['FPeet'] = $flightPlan->eet;
+                        $insert['FPendurance'] = $flightPlan->endurance;
+                        $insert['FPdepTime'] = $flightPlan->departureTime;
+                        $insert['FPpob'] = $flightPlan->peopleOnBoard;
+                        $insert['FPequip'] = $flightPlan->aircraftEquipments;
+
+                        $CLIENTLOG->insert($insert);
+                    }
                 }
             }
-            $log = fopen(WRITEPATH . 'logs/download.log', 'a+');
-            fwrite($log, time() . " [INFO] Rows inserted Correctly \n" );
-            fclose($log);
-        }
-        else{
-            $log = fopen(WRITEPATH . 'logs/download.log', 'a+');
-            fwrite($log, time() . " [ERROR] Rows not inserted. Code >400 \n" );
-            fclose($log);
         }
     }
 
+
     public function test(){
+        $test= 'HEAV';
 
-        $CURL = Services::curlrequest();
-
-        //$CURL->setHeader("Api-Key", "MV8kLc2labiJ0cr3bUMXFPrm9MTuw4uC");
-        $CURL->setHeader("accept", "application/json");
-        $response = $CURL->request('GET', 'https://api.ivao.aero/v2/tracker/whazzup', ['http_errors' => false]);
-
-
-        $code = $response->getStatusCode();
-
-
-            $body = json_decode($response->getBody());
-
-
-            echo "<pre>";
-            echo(json_encode($body->clients->pilots));
-            echo "</pre>";
-
-
-
+        if(preg_match('/LI[A-Z]{2}/', $test)){
+            echo "SI";
+        }
+        else{
+            echo "NO";
+        }
     }
 
 }
