@@ -113,7 +113,7 @@ class Home extends BaseController
 
                     //Inserisco soltanto i log che presentano un arrivo o partenza dall'italia
 
-                    if ($testDepAD === true || $testDestAD === true){
+                    if ($testDepAD == true || $testDestAD == true){
                         $insert['FPdestAD'] = $flightPlan->arrivalId;
                         $insert['FPid'] = $flightPlan->id;
                         $insert['FPdepAD'] = $flightPlan->departureId;
@@ -156,7 +156,7 @@ class Home extends BaseController
                 $insert['frequency'] = $atcSession->frequency;
                 $insert['position'] = $atcSession->position;
 
-                $match = preg_match('/LI[A-Z]{2}_[\s\S]/', $item->callsign);
+                $match = preg_match('/LI[A-Z]{2}_(?!EXA|X)[\s\S]/', $item->callsign);
                 if ($match == true){
                     $ATCLOG->insert($insert);
                 }

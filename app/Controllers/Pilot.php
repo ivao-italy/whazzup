@@ -24,7 +24,6 @@ class Pilot extends BaseController
         $FIip  = $PILOTS->getDistinctFPid(['connTime< ' => $pastDate]);
 
 
-        //var_dump($FIip);
 
         foreach ($FIip as $singleConnection) {
 
@@ -96,8 +95,8 @@ class Pilot extends BaseController
 
                     $insert['connTime'] = $this->timeConverter($firstRowOnGround->connTime);
                     $insert['airborneTime'] =  $this->timeConverter($firstRowOnAir->timestamp);
-                    $insert['timeOnline'] = $totalOnGround;
-                    $insert['timeOnAir'] = $totalOnAir;
+                    $insert['timeOnline'] = $totalOnGround + 120;
+                    $insert['timeOnAir'] = $totalOnAir + 120;
 
                     $PILOTLOG->insert($insert);
 
@@ -131,8 +130,8 @@ class Pilot extends BaseController
         return $TIME->format($formatOutput);
     }
 
-    private function secondConverter($seconds, $formatOutput = 'H:i'){
-        return gmdate($formatOutput, $seconds);
+    private function secondConverter($seconds, $formatOutput = 'H:i', $additionalTime = 0){
+        return gmdate($formatOutput, $seconds + $additionalTime);
     }
 
 
