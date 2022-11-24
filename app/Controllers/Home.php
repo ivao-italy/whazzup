@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 
+use App\Models\AtcLog;
 use App\Models\ClientLog;
 use App\Models\WhazzupInfo;
 use CodeIgniter\Config\Services;
@@ -42,7 +43,7 @@ class Home extends BaseController
                 $atcs = $body->clients->atcs;
 
                 file_put_contents(WRITEPATH . 'pilotLog/pilotLog', json_encode($pilots));
-                file_put_contents(WRITEPATH . 'pilotLog/atctLog', json_encode($atcs));
+                file_put_contents(WRITEPATH . 'pilotLog/atcLog', json_encode($atcs));
                 $insert['code'] = $code;
 
             }
@@ -74,6 +75,7 @@ class Home extends BaseController
 
         if ($lastrow->code <400){
 
+            //INSERISCO I DATI DEI PILOTI
             $CLIENTLOG = new ClientLog();
             $file = json_decode(file_get_contents(WRITEPATH . 'pilotLog/pilotLog'));
 
@@ -133,19 +135,38 @@ class Home extends BaseController
                     }
                 }
             }
+
+            //INSERISCO I DATI ATC
+            $ATCLOG = new AtcLog();
+            $file = json_decode(file_get_contents(WRITEPATH . 'pilotLog/atcLog'));
+
+            foreach ($file as $item){
+                $insert['sessionId'] = $item->id;
+                $insert['vid'] = $item->userId;
+                $insert['callsign'] = $item->callsign;
+                $insert['clientName'] = $item->softwareTypeId;
+                $insert['clientVersion'] = $item->softwareVersion;
+                $insert['rating'] = $item->rating;
+                $insert['connTime'] = $item->createdAt;
+
+                $lastTrack = $item->lastTrack;
+                $insert['timestamp'] = $lastTrack->timestamp;
+
+                $atcSession = $item->atcSession;
+                $insert['frequency'] = $atcSession->frequency;
+                $insert['position'] = $atcSession->position;
+
+                $match = preg_match('/LI[A-Z]{2}_[\s\S]/', $item->callsign);
+                if ($match == true){
+                    $ATCLOG->insert($insert);
+                }
+            }
         }
     }
 
 
     public function test(){
-        $test= 'HEAV';
 
-        if(preg_match('/LI[A-Z]{2}/', $test)){
-            echo "SI";
-        }
-        else{
-            echo "NO";
-        }
     }
 
 }
